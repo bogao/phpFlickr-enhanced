@@ -1,5 +1,5 @@
 <?php
-require_once("phpFlickr.php"); // Get ALL FILES from https://github.com/dan-coulter/phpflickr instead of phpFlickr.php ONLY
+require_once("path/to/phpFlickr.php"); // Get ALL FILES from https://github.com/dan-coulter/phpflickr instead of phpFlickr.php ONLY
 
 // For developers outside China mainland, simply replace the follwing three lines with
 // define("USERHOST", "live.staticflickr.com");
