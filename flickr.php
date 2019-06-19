@@ -192,9 +192,12 @@ function getPhotoEXIFById($fObj, $photoId){
     return $photoEXIF;
 }
 
-function getPhotoById($fObj, $photoId, $photoSize = NULL, $inAlbums = false, $withEXIF = false, $interestingnessEvaluation = false){
+function getPhotoById($fObj, $photoId, $photoSize = NULL, $inAlbums = false, $primarySize = NULL, $withEXIF = false, $interestingnessEvaluation = false){
     if (is_null($photoSize)){
         $photoSize = "small_320";
+    }
+    if (is_null($primarySize)){
+        $primarySize = "square";
     }
 
     $photos = $fObj->photos_getInfo($photoId);
@@ -222,20 +225,20 @@ function getPhotoById($fObj, $photoId, $photoSize = NULL, $inAlbums = false, $wi
         unset($photoInfo["tags"]);
     }
 
-    if ($withEXIF){
-        $photoInfo["exif"] = getPhotoEXIFById($fObj, $photoId);
-    }
-
     if ($inAlbums) {
         $sarr = array();
         $albums = $fObj->photos_getAllContexts($photoId);
         if (count($albums["set"]) > 0){
             foreach ($albums["set"] as $spset){
-                $pInfo = getPhotoById($fObj, $spset["primary"], "square");
+                $pInfo = getPhotoById($fObj, $spset["primary"], $primarySize);
                 array_push($sarr, array("id"=>$spset["id"], "title"=>$spset["title"], "primary"=>$spset["primary"], "url"=> $pInfo["url"]));
             }
         }
         $photoInfo["albums"] = $sarr;
+    }
+
+    if ($withEXIF){
+        $photoInfo["exif"] = getPhotoEXIFById($fObj, $photoId);
     }
 
     if ($interestingnessEvaluation){
@@ -260,9 +263,12 @@ function getPhotoById($fObj, $photoId, $photoSize = NULL, $inAlbums = false, $wi
     return $photoInfo;
 }
 
-function getPhotoByUser($fObj, $userId, $photoOrder = NULL, $photoSize = NULL, $inAlbums = false, $withEXIF = false, $interestingnessEvaluation = false){
+function getPhotoByUser($fObj, $userId, $photoOrder = NULL, $photoSize = NULL, $inAlbums = false, $primarySize = NULL, $withEXIF = false, $interestingnessEvaluation = false){
     if (is_null($photoSize)){
         $photoSize = "small_320";
+    }
+    if (is_null($primarySize)){
+        $primarySize = "square";
     }
 
     $total = getTotalByUser($fObj, $userId);
@@ -278,7 +284,7 @@ function getPhotoByUser($fObj, $userId, $photoOrder = NULL, $photoSize = NULL, $
     }
     $photos = $fObj->people_getPublicPhotos($userId, NULL, NULL, 1, $photoOrder);
     $photoId = $photos["photos"]["photo"][0]["id"];
-    $photoInfo = getPhotoById($fObj, $photoId, $photoSize, $inAlbums, $withEXIF, $interestingnessEvaluation);
+    $photoInfo = getPhotoById($fObj, $photoId, $photoSize, $inAlbums, $primarySize, $withEXIF, $interestingnessEvaluation);
     $photoInfo["total"] = $total;
     $photoInfo["current"] = $photoOrder;
     return $photoInfo;
