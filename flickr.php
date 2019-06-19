@@ -1,7 +1,7 @@
 <?php
-require_once("phpFlickr.php"); // Get ALL FILES from https://github.com/dan-coulter/phpflickr
+require_once("phpFlickr.php"); // Get ALL FILES from https://github.com/dan-coulter/phpflickr instead of phpFlickr.php ONLY
 
-// For developers outside China mainland, simply replace the follwing two lines with
+// For developers outside China mainland, simply replace the follwing three lines with
 // define("USERHOST", "live.staticflickr.com");
 define("IPINFODBAPIKEY", "fake-api-key"); // Get yours from https://www.ipinfodb.com/register
 define("USERLOC", ($json = json_decode(@file_get_contents('https://api.ipinfodb.com/v3/ip-country?key=' . IPINFODBAPIKEY . '&ip=' . $_SERVER['REMOTE_ADDR'] . '&format=json'), true)) ? $json['countryCode'] : "US");
