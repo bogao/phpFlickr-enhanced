@@ -3,7 +3,8 @@ require_once("phpFlickr.php"); // Get ALL FILES from https://github.com/dan-coul
 
 // For developers outside China mainland, simply replace the follwing two lines with
 // define("USERHOST", "live.staticflickr.com");
-define("USERLOC", ($json = json_decode(@file_get_contents('https://api.ipinfodb.com/v3/ip-country?key=21c8cf75cb6df95093d82852c34e982fbeadc81a0f938294265ab5054a4d0186&ip=' . $_SERVER['REMOTE_ADDR'] . '&format=json'), true)) ? $json['countryCode'] : "US");
+define("IPINFODBAPIKEY", ""); // Get yours from https://www.ipinfodb.com/register
+define("USERLOC", ($json = json_decode(@file_get_contents('https://api.ipinfodb.com/v3/ip-country?key=' . IPINFODBAPIKEY . '&ip=' . $_SERVER['REMOTE_ADDR'] . '&format=json'), true)) ? $json['countryCode'] : "US");
 define("USERHOST", USERLOC == "CN" ? "flickr.contentdeliver.net" : "live.staticflickr.com");
 
 function timetotxt($tt, $stamp = false, $lang = "chs"){
