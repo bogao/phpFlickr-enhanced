@@ -3,7 +3,7 @@ require_once("phpFlickr.php"); // Get ALL FILES from https://github.com/dan-coul
 
 // For developers outside China mainland, simply replace the follwing two lines with
 // define("USERHOST", "live.staticflickr.com");
-define("IPINFODBAPIKEY", ""); // Get yours from https://www.ipinfodb.com/register
+define("IPINFODBAPIKEY", "fake-api-key"); // Get yours from https://www.ipinfodb.com/register
 define("USERLOC", ($json = json_decode(@file_get_contents('https://api.ipinfodb.com/v3/ip-country?key=' . IPINFODBAPIKEY . '&ip=' . $_SERVER['REMOTE_ADDR'] . '&format=json'), true)) ? $json['countryCode'] : "US");
 define("USERHOST", USERLOC == "CN" ? "flickr.contentdeliver.net" : "live.staticflickr.com");
 
@@ -401,7 +401,7 @@ function getAlbumsByUser($fObj, $userId, $primarySize = NULL, $mode = NULL, $qua
 // API code ends here.
 // Client code follows.
 
-// $keystr = ""; // Get yours from https://www.flickr.com/services/api/keys/
+$keystr = "fake-api-key"; // Get yours from https://www.flickr.com/services/api/keys/
 $f = new phpFlickr($keystr); // Do include correct phpFlickr.php and its dependencies.
 
 // Database used for caching is optional. Only include the follwing code provided that you do have a database for caching.
