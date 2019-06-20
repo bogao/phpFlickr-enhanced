@@ -369,7 +369,9 @@ function getAlbumsByUser($fObj, $userId, $primarySize = NULL, $mode = NULL, $qua
         }
         array_push($albums, $albumInfo);
     }
-    $albums = selectItems($albums, $quantity);
+    if ($mode != "all"){
+        $albums = selectItems($albums, $quantity);
+    }
     return ($mode == "single") ? $albums[0] : $albums;
 }
 // API code ends here.
