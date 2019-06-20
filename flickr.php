@@ -206,11 +206,7 @@ function getPhotoById($fObj, $photoId, $photoSize = NULL, $inAlbums = false, $pr
     foreach ($photo["tags"]["tag"] as $photoTag) {
         array_push($photoTags, $photoTag["raw"]);
     }
-    $photoInfo = array("id" => $photoId, "title" => $photo["title"]["_content"], "description" => $photo["description"]["_content"], "tags" => $photoTags, "url" => buildImageURL($fObj, $photo, $photoSize),
-    "stamps" => array("taken" => strval(strtotime($photo["dates"]["taken"])), "posted" => $photo["dates"]["posted"], "updated" => $photo["dates"]["lastupdate"]),
-    "dates" => array("taken" => timetotxt($photo["dates"]["taken"], false), "posted" => timetotxt($photo["dates"]["posted"]), "updated" => timetotxt($photo["dates"]["lastupdate"])),
-    "fromToday" => array("taken" => offsetDate($photo["dates"]["taken"], false), "posted" => offsetDate($photo["dates"]["posted"]), "updated" => offsetDate($photo["dates"]["lastupdate"])),
-    "views" => $photo["views"]);
+    $photoInfo = array("id" => $photoId, "title" => $photo["title"]["_content"], "description" => $photo["description"]["_content"], "tags" => $photoTags, "url" => buildImageURL($fObj, $photo, $photoSize), "stamps" => array("taken" => strval(strtotime($photo["dates"]["taken"])), "posted" => $photo["dates"]["posted"], "updated" => $photo["dates"]["lastupdate"]), "dates" => array("taken" => timetotxt($photo["dates"]["taken"], false), "posted" => timetotxt($photo["dates"]["posted"]), "updated" => timetotxt($photo["dates"]["lastupdate"])), "fromToday" => array("taken" => offsetDate($photo["dates"]["taken"], false), "posted" => offsetDate($photo["dates"]["posted"]), "updated" => offsetDate($photo["dates"]["lastupdate"])), "views" => $photo["views"]);
     if (trim($photoInfo["description"]) == "") {
         unset($photoInfo["description"]);
     }
