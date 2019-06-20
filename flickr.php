@@ -23,7 +23,7 @@ function timetotxt($tt, $stamp = true, $lang = "chs") {
             return $yy . "年" . $mm . "月" . $dd . "日" . $hh . "时" . $mmn . "分";
     }
 }
-function offsetDate($tt, $stamp = true){
+function offsetDate($tt, $stamp = true) {
     if ($stamp) {
         $tt = date('Y-m-d', $tt);
     } else {
@@ -32,7 +32,6 @@ function offsetDate($tt, $stamp = true){
         $dd = substr($tt, 8, 2);
         $tt = $yy . "-" . $mm . "-" . $dd;
     }
-
     $oDate = date_diff(date_create($tt), date_create(date('Y-m-d')));
     return intval($oDate->format("%R%a"));
 }
@@ -207,9 +206,7 @@ function getPhotoById($fObj, $photoId, $photoSize = NULL, $inAlbums = false, $pr
     foreach ($photo["tags"]["tag"] as $photoTag) {
         array_push($photoTags, $photoTag["raw"]);
     }
-    $photoInfo = array("id" => $photoId, "title" => $photo["title"]["_content"], "description" => $photo["description"]["_content"], "tags" => $photoTags, "url" => buildImageURL($fObj, $photo, $photoSize), "dates" => array("taken" => timetotxt($photo["dates"]["taken"], false), "posted" => timetotxt($photo["dates"]["posted"]), "updated" => timetotxt($photo["dates"]["lastupdate"])), 
-    "fromToday" => array("taken" => offsetDate($photo["dates"]["taken"], false), "posted" => offsetDate($photo["dates"]["posted"]), "updated" => offsetDate($photo["dates"]["lastupdate"])),
-    "views" => $photo["views"]);
+    $photoInfo = array("id" => $photoId, "title" => $photo["title"]["_content"], "description" => $photo["description"]["_content"], "tags" => $photoTags, "url" => buildImageURL($fObj, $photo, $photoSize), "dates" => array("taken" => timetotxt($photo["dates"]["taken"], false), "posted" => timetotxt($photo["dates"]["posted"]), "updated" => timetotxt($photo["dates"]["lastupdate"])), "fromToday" => array("taken" => offsetDate($photo["dates"]["taken"], false), "posted" => offsetDate($photo["dates"]["posted"]), "updated" => offsetDate($photo["dates"]["lastupdate"])), "views" => $photo["views"]);
     if (trim($photoInfo["description"]) == "") {
         unset($photoInfo["description"]);
     }
@@ -237,11 +234,8 @@ function getPhotoById($fObj, $photoId, $photoSize = NULL, $inAlbums = false, $pr
     }
     return $photoInfo;
 }
-function getPhotosByUser($fObj, $userId, 
-    $mode = NULL,
-    $perPage = NULL, $pageOrder = NULL, $photoSize = NULL,
-    $inAlbums = false, $primarySize = NULL, $withEXIF = false, $interestingnessEvaluation = false) {
-    if (!is_null($mode)){
+function getPhotosByUser($fObj, $userId, $mode = NULL, $perPage = NULL, $pageOrder = NULL, $photoSize = NULL, $inAlbums = false, $primarySize = NULL, $withEXIF = false, $interestingnessEvaluation = false) {
+    if (!is_null($mode)) {
         $mode = trim(strtolower($mode));
     }
     if (is_null($photoSize)) {
@@ -250,9 +244,8 @@ function getPhotosByUser($fObj, $userId,
     if (is_null($primarySize)) {
         $primarySize = "square";
     }
-  
     $total = getTotalByUser($fObj, $userId);
-    if ($mode == "single"){
+    if ($mode == "single") {
         $perPage = 1;
         if (is_null($pageOrder)) {
             $pageOrder = rand(1, $total);
@@ -265,13 +258,13 @@ function getPhotosByUser($fObj, $userId,
             }
         }
     } else {
-        if (is_null($perPage) || ($perPage>100)){
+        if (is_null($perPage) || ($perPage > 100)) {
             $perPage = 100;
-        } else if ($perPage<1){
+        } else if ($perPage < 1) {
             $perPage = 1;
         }
         $pageCount = ($total % $perPage == 0) ? ($total / $perPage) : (floor($total / $perPage) + 1);
-        if (is_null($pageOrder)){
+        if (is_null($pageOrder)) {
             $pageOrder = rand(1, $pageCount);
         } else {
             if ($pageOrder < 1) {
@@ -285,21 +278,18 @@ function getPhotosByUser($fObj, $userId,
     $photos = $fObj->people_getPublicPhotos($userId, NULL, NULL, $perPage, $pageOrder);
     $photoInfo = array();
     $i = 0;
-    foreach ($photos["photos"]["photo"] as $photo){
-       // $currentPhotoInfo["params"] = array($photo["id"], $photoSize, $inAlbums, $primarySize, $withEXIF, $interestingnessEvaluation);
-       $currentPhotoInfo = getPhotoById($fObj, $photo["id"], $photoSize, $inAlbums, $primarySize, $withEXIF, $interestingnessEvaluation);
-       $currentPhotoInfo["total"] = $total;
-       $currentPhotoInfo["current"] = $perPage * ($pageOrder - 1) + (++$i);
-	   array_push($photoInfo, $currentPhotoInfo);
+    foreach ($photos["photos"]["photo"] as $photo) {
+        $currentPhotoInfo = getPhotoById($fObj, $photo["id"], $photoSize, $inAlbums, $primarySize, $withEXIF, $interestingnessEvaluation);
+        $currentPhotoInfo["total"] = $total;
+        $currentPhotoInfo["current"] = $perPage * ($pageOrder - 1) + (++$i);
+        array_push($photoInfo, $currentPhotoInfo);
     }
-    if ($mode == "single"){
+    if ($mode == "single") {
         return $photoInfo[0];
     }
     return $photoInfo;
-
 }
-
-function getAlbumById($fObj, $albumId, $primarySize = NULL, $withContents = false, $photoSize = NULL) {
+function getAlbumById($fObj, $albumId, $primarySize = NULL, $withContents = false, $perPage = NULL, $pageOrder = NULL, $photoSize = NULL) {
     $album = $fObj->photosets_getInfo($albumId);
     if (is_null($primarySize)) {
         $primarySize = "large";
@@ -315,25 +305,23 @@ function getAlbumById($fObj, $albumId, $primarySize = NULL, $withContents = fals
     } else {
         $primary = buildImageURL($fObj, $album, $primarySize);
     }
-    $albumInfo = array("id" => $albumId, "title" => $album["title"]["_content"], "description" => $album["description"]["_content"], "count" => array("photos" => $album["count_photos"], "videos" => $album["count_videos"]), "views" => $album["count_views"],
-    "dates" => array("created" => timetotxt($album["date_create"]), "updated" => timetotxt($album["date_update"])),
-    "fromToday" => array("created" => offsetDate($album["date_create"]), "updated" => offsetDate($album["date_update"])),
-    "primary" => $primary);
+    $albumInfo = array("id" => $albumId, "title" => $album["title"]["_content"], "description" => $album["description"]["_content"], "count" => array("photos" => $album["count_photos"], "videos" => $album["count_videos"]), "views" => $album["count_views"], "dates" => array("created" => timetotxt($album["date_create"]), "updated" => timetotxt($album["date_update"])), "fromToday" => array("created" => offsetDate($album["date_create"]), "updated" => offsetDate($album["date_update"])), "primary" => $primary);
     if (trim($albumInfo["description"]) == "") {
         unset($albumInfo["description"]);
     }
     if ($withContents) {
-        $contents = $fObj->photosets_getPhotos($albumId, "media,original_format");
+        $contents = $fObj->photosets_getPhotos($albumId, "media,original_format", NULL, $perPage, $pageOrder);
         $parr = array();
         $varr = array();
         $raw = array();
+        $position = 0;
         foreach ($contents["photoset"]["photo"] as $content) {
             if (strtolower($content["media"]) == "photo") {
-                $currentPhoto = array("id" => $content["id"], "title" => $content["title"], "url" => buildImageURL($fObj, $content, $photoSize));
+                $currentPhoto = array("id" => $content["id"], "title" => $content["title"], "url" => buildImageURL($fObj, $content, $photoSize), "total" => count($contents["photoset"]["photo"]), "current" => $perPage * ($pageOrder - 1) + (++$position));
                 array_push($parr, $currentPhoto);
                 array_push($raw, $currentPhoto["url"]);
             } else if (strtolower($content["media"]) == "video") {
-                $currentVideo = array("id" => $content["id"], "title" => $content["title"], "url" => buildImageURL($fObj, $content, $photoSize));
+                $currentVideo = array("id" => $content["id"], "title" => $content["title"], "url" => buildImageURL($fObj, $content, $photoSize), "total" => count($contents["photoset"]["photo"]), "current" => $perPage * ($pageOrder - 1) + (++$position));
                 array_push($varr, $currentVideo);
                 array_push($raw, $currentVideo["url"]);
             }
@@ -375,10 +363,7 @@ function getAlbumsByUser($fObj, $userId, $primarySize = NULL, $mode = NULL, $qua
     foreach ($rawalbums["photoset"] as $rawalbum) {
         $primaryExtras = array_pop($rawalbum);
         $album = array_merge($rawalbum, $primaryExtras);
-        $albumInfo = array("id" => $album["id"], "title" => $album["title"]["_content"], "count" => array("photos" => $album["photos"], "videos" => $album["videos"]), "views" => $album["count_views"],
-        "dates" => array("created" => timetotxt($album["date_create"]), "updated" => timetotxt($album["date_update"])),
-        "fromToday" => array("created" => offsetDate($album["date_create"]), "updated" => offsetDate($album["date_update"])),
-        "primary" => buildImageURL($fObj, $album, $primarySize));
+        $albumInfo = array("id" => $album["id"], "title" => $album["title"]["_content"], "count" => array("photos" => $album["photos"], "videos" => $album["videos"]), "views" => $album["count_views"], "dates" => array("created" => timetotxt($album["date_create"]), "updated" => timetotxt($album["date_update"])), "fromToday" => array("created" => offsetDate($album["date_create"]), "updated" => offsetDate($album["date_update"])), "primary" => buildImageURL($fObj, $album, $primarySize));
         if (trim($albumInfo["description"]) == "") {
             unset($albumInfo["description"]);
         }
