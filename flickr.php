@@ -1,11 +1,11 @@
 <?php
 require_once("path/to/phpFlickr.php"); // Get ALL FILES from https://github.com/dan-coulter/phpflickr instead of phpFlickr.php ONLY
 
-// For developers outside China mainland, simply replace the follwing three lines with
-// define("USERHOST", "live.staticflickr.com");
-define("IPINFODBAPIKEY", "fake-api-key"); // Get yours from https://www.ipinfodb.com/register
-define("USERLOC", ($json = json_decode(@file_get_contents('https://api.ipinfodb.com/v3/ip-country?key=' . IPINFODBAPIKEY . '&ip=' . $_SERVER['REMOTE_ADDR'] . '&format=json'), true)) ? $json['countryCode'] : "US");
-define("USERHOST", USERLOC == "CN" ? "flickr.contentdeliver.net" : "live.staticflickr.com");
+define("USERHOST", "live.staticflickr.com");
+// For developers aiming at China mainland marketplace, replace the line above with the follwing three lines:
+// define("IPINFODBAPIKEY", "fake-api-key"); // Get yours from https://www.ipinfodb.com/register
+// define("USERLOC", ($json = json_decode(@file_get_contents('https://api.ipinfodb.com/v3/ip-country?key=' . IPINFODBAPIKEY . '&ip=' . $_SERVER['REMOTE_ADDR'] . '&format=json'), true)) ? $json['countryCode'] : "US");
+// define("USERHOST", USERLOC == "CN" ? "fake.flickrcdn.inchina" : "live.staticflickr.com"); // Try https://www.qiniu.com
 
 function displayTime($tt, $stamp = true, $lang = "zh-cn") {
     // 2016-08-04 16:41:14 => 2016年8月4日16时41分
@@ -63,10 +63,14 @@ function noDuplicatedItems($all, $n) {
     }
     return true;
 }
-function selectItems($all, $n) {
+function selectItems($all, $n, $byValue = false) {
     shuffle($all);
     $all = array_slice($all, 0, $n);
-    ksort($all);
+    if ($byValue) {
+        sort($all);
+    } else {
+        ksort($all);
+    }
     return $all;
 }
 function sortEXIF($former, $latter) {
@@ -332,10 +336,7 @@ function getPhotosByUser($fObj, $userId, $mode = NULL, $perPage = NULL, $pageOrd
         $currentPhotoInfo["current"] = $perPage * ($pageOrder - 1) + (++$i);
         array_push($photoInfo, $currentPhotoInfo);
     }
-    if ($mode == "single") {
-        return $photoInfo[0];
-    }
-    return $photoInfo;
+    return ($mode == "single") ? $photoInfo[0] : $photoInfo;
 }
 function getAlbumById($fObj, $albumId, $primarySize = NULL, $withContents = false, $perPage = NULL, $pageOrder = NULL, $photoSize = NULL) {
     $album = $fObj->photosets_getInfo($albumId);
@@ -387,38 +388,39 @@ function getAlbumById($fObj, $albumId, $primarySize = NULL, $withContents = fals
     return $albumInfo;
 }
 function getAlbumsByUser($fObj, $userId, $primarySize = NULL, $mode = NULL, $quantity = NULL) {
-    $rawalbums = $fObj->photosets_getList($userId, NULL, NULL, "original_format");
+    $rawAlbums = $fObj->photosets_getList($userId, NULL, NULL, "original_format");
     if (is_null($primarySize)) {
         $primarySize = "large";
     }
-    $total = intval($rawalbums["total"]);
+    $total = intval($rawAlbums["total"]);
     if (is_null($mode) && is_null($quantity)) {
         $mode = "all";
     }
     $mode = trim(strtolower($mode));
     if ($mode == "all") {
         $quantity = $total;
+        $albumKeys = range(0, $total - 1);
     } else if ($mode == "single") {
         $quantity = 1;
+        $albumKeys[0] = rand(0, $total - 1);
     } else {
         if ($quantity > $total) {
             $quantity = $total;
         } else if ($quantity < 1) {
             $quantity = 1;
         }
+        $albumKeys = selectItems(range(0, $total - 1), $quantity, true);
     }
     $albums = array();
-    foreach ($rawalbums["photoset"] as $rawalbum) {
-        $primaryExtras = array_pop($rawalbum);
-        $album = array_merge($rawalbum, $primaryExtras);
+    foreach ($albumKeys as $albumKey) {
+        $rawAlbum = $rawAlbums["photoset"][$albumKey];
+        $primaryExtras = array_pop($rawAlbum);
+        $album = array_merge($rawAlbum, $primaryExtras);
         $albumInfo = array("id" => $album["id"], "title" => $album["title"]["_content"], "count" => array("photos" => $album["photos"], "videos" => $album["videos"]), "views" => $album["count_views"], "stamps" => array("created" => $album["date_create"], "updated" => $album["date_update"]), "dates" => array("created" => displayTime($album["date_create"]), "updated" => displayTime($album["date_update"])), "fromToday" => array("created" => offsetDate($album["date_create"]), "updated" => offsetDate($album["date_update"])), "primary" => buildImageURL($fObj, $album, $primarySize));
         if (trim($albumInfo["description"]) == "") {
             unset($albumInfo["description"]);
         }
         array_push($albums, $albumInfo);
-    }
-    if ($mode != "all") {
-        $albums = selectItems($albums, $quantity);
     }
     return ($mode == "single") ? $albums[0] : $albums;
 }
