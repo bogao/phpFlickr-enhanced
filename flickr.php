@@ -376,7 +376,6 @@ function getAlbumsByUser($fObj, $userId, $primarySize = NULL, $mode = NULL, $qua
     }
     return ($mode == "single") ? $albums[0] : $albums;
 }
-?>
 // API code ends here.
 // Client code follows.
 
