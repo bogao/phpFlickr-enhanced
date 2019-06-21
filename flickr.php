@@ -33,7 +33,7 @@ function offsetDate($tt, $stamp = true) {
         $tt = $yy . "-" . $mm . "-" . $dd;
     }
     $oDate = date_diff(date_create($tt), date_create(date('Y-m-d')));
-    return intval($oDate->format("%R%a"));
+    return $oDate ? intval($oDate->format("%R%a")) : NULL;
 }
 function joinURL($parsed_url) {
     $scheme = isset($parsed_url['scheme']) ? $parsed_url['scheme'] . '://' : '';
@@ -203,8 +203,10 @@ function getPhotoById($fObj, $photoId, $photoSize = NULL, $inAlbums = false, $pr
     $photos = $fObj->photos_getInfo($photoId);
     $photo = $photos["photo"];
     $photoTags = array();
-    foreach ($photo["tags"]["tag"] as $photoTag) {
-        array_push($photoTags, $photoTag["raw"]);
+    if (count($photo["tags"]["tag"]) > 0) {
+        foreach ($photo["tags"]["tag"] as $photoTag) {
+            array_push($photoTags, $photoTag["raw"]);
+        }
     }
     $photoInfo = array("id" => $photoId, "title" => $photo["title"]["_content"], "description" => $photo["description"]["_content"], "tags" => $photoTags, "url" => buildImageURL($fObj, $photo, $photoSize), "stamps" => array("taken" => strval(strtotime($photo["dates"]["taken"])), "posted" => $photo["dates"]["posted"], "updated" => $photo["dates"]["lastupdate"]), "dates" => array("taken" => timetotxt($photo["dates"]["taken"], false), "posted" => timetotxt($photo["dates"]["posted"]), "updated" => timetotxt($photo["dates"]["lastupdate"])), "fromToday" => array("taken" => offsetDate($photo["dates"]["taken"], false), "posted" => offsetDate($photo["dates"]["posted"]), "updated" => offsetDate($photo["dates"]["lastupdate"])), "views" => $photo["views"]);
     if (trim($photoInfo["description"]) == "") {
@@ -369,11 +371,12 @@ function getAlbumsByUser($fObj, $userId, $primarySize = NULL, $mode = NULL, $qua
         }
         array_push($albums, $albumInfo);
     }
-    if ($mode != "all"){
+    if ($mode != "all") {
         $albums = selectItems($albums, $quantity);
     }
     return ($mode == "single") ? $albums[0] : $albums;
 }
+?>
 // API code ends here.
 // Client code follows.
 
