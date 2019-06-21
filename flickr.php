@@ -85,23 +85,21 @@ function getTotalByUser($fObj, $userId) {
 function getPhotoEXIFById($fObj, $photoId, $lang = "zh-cn") {
     $photoEXIF = array();
     $rawEXIF = $fObj->photos_getExif($photoId);
-
-    switch ($lang){
-        case "zh-cn": 
-            $names = ["照相机型号", "照相机制造厂商", "镜头规格", "镜头型号", "ISO", "快门", "光圈", "焦距", "闪光灯", "白平衡"]; 
+    switch ($lang) {
+        case "zh-cn":
+            $names = ["照相机型号", "照相机制造厂商", "镜头规格", "镜头型号", "ISO", "快门", "光圈", "焦距", "闪光灯", "白平衡"];
         break;
-        default: 
+        default:
             $names = ["照相机型号", "照相机制造厂商", "镜头规格", "镜头型号", "ISO", "快门", "光圈", "焦距", "闪光灯", "白平衡"];
     }
     $metas = ["model", "manufacturer", "lens specification", "lens model", "iso", "exposure time", "f number", "focal length", "flash", "white balance"];
-
     if (isset($rawEXIF["camera"])) {
         $itemOrder = 0;
         $contents[$itemOrder] = $rawEXIF["camera"];
         $displays[$itemOrder] = $rawEXIF["camera"];
         array_push($photoEXIF, array("order" => $itemOrder, "item" => $names[$itemOrder], "meta" => $metas[$itemOrder], "content" => $contents[$itemOrder], "display" => $displays[$itemOrder]));
     }
-    if (isset($rawEXIF["exif"])){
+    if (isset($rawEXIF["exif"])) {
         foreach ($rawEXIF["exif"] as $rawEXIFitem) {
             if (isset($rawEXIFitem["raw"]["_content"])) {
                 $EXIFcontent = $rawEXIFitem["raw"]["_content"];
@@ -144,7 +142,14 @@ function getPhotoEXIFById($fObj, $photoId, $lang = "zh-cn") {
                         $itemMeta = "exposure time";
                         if (noDuplicatedItems($photoEXIF, $itemName)) {
                             $contents[$itemOrder] = $EXIFcontent;
-                            $displays[$itemOrder] = $EXIFcontent . "秒";
+                            switch ($lang) {
+                                case "zh-cn":
+                                    $exposureTimeUnit = "秒";
+                                break;
+                                default:
+                                    $exposureTimeUnit = "秒";
+                            }
+                            $displays[$itemOrder] = $EXIFcontent . $exposureTimeUnit;
                             array_push($photoEXIF, array("order" => $itemOrder, "item" => $names[$itemOrder], "meta" => $metas[$itemOrder], "content" => $contents[$itemOrder], "display" => $displays[$itemOrder]));
                         }
                     break;
@@ -160,7 +165,14 @@ function getPhotoEXIFById($fObj, $photoId, $lang = "zh-cn") {
                         $itemOrder = 7;
                         if (noDuplicatedItems($photoEXIF, $itemName)) {
                             $contents[$itemOrder] = $EXIFcontent;
-                            $displays[$itemOrder] = str_replace(" mm", "毫米", $EXIFcontent);
+                            switch ($lang) {
+                                case "zh-cn":
+                                    $focalLengthUnit = "毫米";
+                                break;
+                                default:
+                                    $focalLengthUnit = "毫米";
+                            }
+                            $displays[$itemOrder] = str_replace(" mm", $focalLengthUnit, $EXIFcontent);
                             array_push($photoEXIF, array("order" => $itemOrder, "item" => $names[$itemOrder], "meta" => $metas[$itemOrder], "content" => $contents[$itemOrder], "display" => $displays[$itemOrder]));
                         }
                     break;
@@ -168,12 +180,19 @@ function getPhotoEXIFById($fObj, $photoId, $lang = "zh-cn") {
                         $itemOrder = 8;
                         if (noDuplicatedItems($photoEXIF, $itemName)) {
                             $contents[$itemOrder] = $EXIFcontent;
+                            switch ($lang) {
+                                case "zh-cn":
+                                    $flashDidNotFire = "关闭未闪";
+                                break;
+                                default:
+                                    $flashDidNotFire = "关闭未闪";
+                            }
                             switch ($EXIFcontent) {
                                 case "Auto, Did not fire":
                                 case "Off, Did not fire":
                                 case "Off":
                                 case "No Flash":
-                                    $flashv = "关闭未闪";
+                                    $flashv = $flashDidNotFire;
                                 break;
                                 default:
                                     $flashv = $EXIFcontent;
@@ -186,12 +205,21 @@ function getPhotoEXIFById($fObj, $photoId, $lang = "zh-cn") {
                         $itemOrder = 9;
                         if (noDuplicatedItems($photoEXIF, $itemName)) {
                             $contents[$itemOrder] = $EXIFcontent;
+                            switch ($lang) {
+                                case "zh-cn":
+                                    $autoWhiteBalance = "自动";
+                                    $manualWhiteBalance = "手动";
+                                break;
+                                default:
+                                    $autoWhiteBalance = "自动";
+                                    $manualWhiteBalance = "手动";
+                            }
                             switch ($EXIFcontent) {
                                 case "Auto":
-                                    $wbv = "自动";
+                                    $wbv = $autoWhiteBalance;
                                 break;
                                 case "Manual":
-                                    $wbv = "手动";
+                                    $wbv = $manualWhiteBalance;
                                 break;
                                 default:
                                     $wbv = $EXIFcontent;
@@ -221,7 +249,7 @@ function getPhotoById($fObj, $photoId, $photoSize = NULL, $inAlbums = false, $pr
     $photos = $fObj->photos_getInfo($photoId);
     $photo = $photos["photo"];
     $photoTags = array();
-    if (count($photo["tags"]["tag"])>0){
+    if (count($photo["tags"]["tag"]) > 0) {
         foreach ($photo["tags"]["tag"] as $photoTag) {
             array_push($photoTags, $photoTag["raw"]);
         }
@@ -389,7 +417,7 @@ function getAlbumsByUser($fObj, $userId, $primarySize = NULL, $mode = NULL, $qua
         }
         array_push($albums, $albumInfo);
     }
-    if ($mode != "all"){
+    if ($mode != "all") {
         $albums = selectItems($albums, $quantity);
     }
     return ($mode == "single") ? $albums[0] : $albums;
