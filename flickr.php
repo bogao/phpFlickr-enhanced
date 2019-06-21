@@ -7,7 +7,7 @@ define("IPINFODBAPIKEY", "fake-api-key"); // Get yours from https://www.ipinfodb
 define("USERLOC", ($json = json_decode(@file_get_contents('https://api.ipinfodb.com/v3/ip-country?key=' . IPINFODBAPIKEY . '&ip=' . $_SERVER['REMOTE_ADDR'] . '&format=json'), true)) ? $json['countryCode'] : "US");
 define("USERHOST", USERLOC == "CN" ? "flickr.contentdeliver.net" : "live.staticflickr.com");
 
-function timetotxt($tt, $stamp = true, $lang = "chs") {
+function displayTime($tt, $stamp = true, $lang = "zh-cn") {
     // 2016-08-04 16:41:14 => 2016年8月4日16时41分
     if ($stamp) {
         $tt = date('Y-m-d H:i:s', $tt);
@@ -19,7 +19,10 @@ function timetotxt($tt, $stamp = true, $lang = "chs") {
     $mmn = intval(substr($tt, 14, 2));
     $ss = intval(substr($tt, 17, 2));
     switch ($lang) {
-        case "chs":
+        case "zh-cn":
+            return $yy . "年" . $mm . "月" . $dd . "日" . $hh . "时" . $mmn . "分";
+        break;
+        default:
             return $yy . "年" . $mm . "月" . $dd . "日" . $hh . "时" . $mmn . "分";
     }
 }
@@ -79,11 +82,26 @@ function getTotalByUser($fObj, $userId) {
     $photos = $fObj->people_getPublicPhotos($userId, NULL, NULL, 1);
     return intval($photos["photos"]["total"]);
 }
-function getPhotoEXIFById($fObj, $photoId) {
+function getPhotoEXIFById($fObj, $photoId, $lang = "zh-cn") {
     $photoEXIF = array();
     $rawEXIF = $fObj->photos_getExif($photoId);
-    if ($rawEXIF["camera"]) {
-        array_push($photoEXIF, array("order" => 0, "item" => "照相机型号", "meta" => "model", "content" => $rawEXIF["camera"], "display" => $rawEXIF["camera"]));
+
+    switch ($lang){
+        case "zh-cn": 
+            $names = ["照相机型号", "照相机制造厂商", "镜头规格", "镜头型号", "ISO", "快门", "光圈", "焦距", "闪光灯", "白平衡"]; 
+        break;
+        default: 
+            $names = ["照相机型号", "照相机制造厂商", "镜头规格", "镜头型号", "ISO", "快门", "光圈", "焦距", "闪光灯", "白平衡"];
+    }
+    $metas = ["model", "manufacturer", "lens specification", "lens model", "iso", "exposure time", "f number", "focal length", "flash", "white balance"];
+
+    if (isset($rawEXIF["camera"])) {
+        $itemOrder = 0;
+        $contents[$itemOrder] = $rawEXIF["camera"];
+        $displays[$itemOrder] = $rawEXIF["camera"];
+        array_push($photoEXIF, array("order" => $itemOrder, "item" => $names[$itemOrder], "meta" => $metas[$itemOrder], "content" => $contents[$itemOrder], "display" => $displays[$itemOrder]));
+    }
+    if (isset($rawEXIF["exif"])){
         foreach ($rawEXIF["exif"] as $rawEXIFitem) {
             if (isset($rawEXIFitem["raw"]["_content"])) {
                 $EXIFcontent = $rawEXIFitem["raw"]["_content"];
@@ -92,65 +110,64 @@ function getPhotoEXIFById($fObj, $photoId) {
                 switch ($rawEXIFitem["tag"]) {
                     case "Make":
                         $itemOrder = 1;
-                        $itemName = "照相机制造厂商";
-                        $itemMeta = "manufacturer";
                         if (noDuplicatedItems($photoEXIF, $itemName)) {
-                            array_push($photoEXIF, array("order" => $itemOrder, "item" => $itemName, "meta" => $itemMeta, "content" => $EXIFcontent, "display" => $EXIFcontent));
+                            $contents[$itemOrder] = $EXIFcontent;
+                            $displays[$itemOrder] = $EXIFcontent;
+                            array_push($photoEXIF, array("order" => $itemOrder, "item" => $names[$itemOrder], "meta" => $metas[$itemOrder], "content" => $contents[$itemOrder], "display" => $displays[$itemOrder]));
                         }
                     break;
                     case "LensSpec":
                         $itemOrder = 2;
-                        $itemName = "镜头规格";
-                        $itemMeta = "lens specification";
                         if (noDuplicatedItems($photoEXIF, $itemName)) {
-                            array_push($photoEXIF, array("order" => $itemOrder, "item" => $itemName, "meta" => $itemMeta, "content" => $EXIFcontent, "display" => $EXIFcontent));
+                            $contents[$itemOrder] = $EXIFcontent;
+                            $displays[$itemOrder] = $EXIFcontent;
+                            array_push($photoEXIF, array("order" => $itemOrder, "item" => $names[$itemOrder], "meta" => $metas[$itemOrder], "content" => $contents[$itemOrder], "display" => $displays[$itemOrder]));
                         }
                     break;
                     case "LensModel":
                         $itemOrder = 3;
-                        $itemName = "镜头型号";
-                        $itemMeta = "lens model";
                         if (noDuplicatedItems($photoEXIF, $itemName)) {
-                            array_push($photoEXIF, array("order" => $itemOrder, "item" => $itemName, "meta" => $itemMeta, "content" => $EXIFcontent, "display" => $EXIFcontent));
+                            $contents[$itemOrder] = $EXIFcontent;
+                            $displays[$itemOrder] = $EXIFcontent;
+                            array_push($photoEXIF, array("order" => $itemOrder, "item" => $names[$itemOrder], "meta" => $metas[$itemOrder], "content" => $contents[$itemOrder], "display" => $displays[$itemOrder]));
                         }
                     break;
                     case "ISO":
                         $itemOrder = 4;
-                        $itemName = "ISO";
-                        $itemMeta = "iso";
                         if (noDuplicatedItems($photoEXIF, $itemName)) {
-                            array_push($photoEXIF, array("order" => $itemOrder, "item" => $itemName, "meta" => $itemMeta, "content" => $EXIFcontent, "display" => $EXIFcontent));
+                            $contents[$itemOrder] = $EXIFcontent;
+                            $displays[$itemOrder] = $EXIFcontent;
+                            array_push($photoEXIF, array("order" => $itemOrder, "item" => $names[$itemOrder], "meta" => $metas[$itemOrder], "content" => $contents[$itemOrder], "display" => $displays[$itemOrder]));
                         }
                     break;
                     case "ExposureTime":
-                        $itemOrder = 5;
-                        $itemName = "快门";
                         $itemMeta = "exposure time";
                         if (noDuplicatedItems($photoEXIF, $itemName)) {
-                            array_push($photoEXIF, array("order" => $itemOrder, "item" => $itemName, "meta" => $itemMeta, "content" => $EXIFcontent, "display" => ($EXIFcontent . "秒")));
+                            $contents[$itemOrder] = $EXIFcontent;
+                            $displays[$itemOrder] = $EXIFcontent . "秒";
+                            array_push($photoEXIF, array("order" => $itemOrder, "item" => $names[$itemOrder], "meta" => $metas[$itemOrder], "content" => $contents[$itemOrder], "display" => $displays[$itemOrder]));
                         }
                     break;
                     case "FNumber":
                         $itemOrder = 6;
-                        $itemName = "光圈";
-                        $itemMeta = "f number";
                         if (noDuplicatedItems($photoEXIF, $itemName)) {
-                            array_push($photoEXIF, array("order" => $itemOrder, "item" => $itemName, "meta" => $itemMeta, "content" => $rawEXIFitem["clean"]["_content"], "display" => $rawEXIFitem["clean"]["_content"]));
+                            $contents[$itemOrder] = $rawEXIFitem["clean"]["_content"];
+                            $displays[$itemOrder] = $rawEXIFitem["clean"]["_content"];
+                            array_push($photoEXIF, array("order" => $itemOrder, "item" => $names[$itemOrder], "meta" => $metas[$itemOrder], "content" => $contents[$itemOrder], "display" => $displays[$itemOrder]));
                         }
                     break;
                     case "FocalLength":
                         $itemOrder = 7;
-                        $itemName = "焦距";
-                        $itemMeta = "focal length";
                         if (noDuplicatedItems($photoEXIF, $itemName)) {
-                            array_push($photoEXIF, array("order" => $itemOrder, "item" => $itemName, "meta" => $itemMeta, "content" => $EXIFcontent, "display" => str_replace(" mm", "毫米", $EXIFcontent)));
+                            $contents[$itemOrder] = $EXIFcontent;
+                            $displays[$itemOrder] = str_replace(" mm", "毫米", $EXIFcontent);
+                            array_push($photoEXIF, array("order" => $itemOrder, "item" => $names[$itemOrder], "meta" => $metas[$itemOrder], "content" => $contents[$itemOrder], "display" => $displays[$itemOrder]));
                         }
                     break;
                     case "Flash":
                         $itemOrder = 8;
-                        $itemName = "闪光灯";
-                        $itemMeta = "flash";
                         if (noDuplicatedItems($photoEXIF, $itemName)) {
+                            $contents[$itemOrder] = $EXIFcontent;
                             switch ($EXIFcontent) {
                                 case "Auto, Did not fire":
                                 case "Off, Did not fire":
@@ -161,14 +178,14 @@ function getPhotoEXIFById($fObj, $photoId) {
                                 default:
                                     $flashv = $EXIFcontent;
                             }
-                            array_push($photoEXIF, array("order" => $itemOrder, "item" => $itemName, "meta" => $itemMeta, "content" => $EXIFcontent, "display" => $flashv));
+                            $displays[$itemOrder] = $flashv;
+                            array_push($photoEXIF, array("order" => $itemOrder, "item" => $names[$itemOrder], "meta" => $metas[$itemOrder], "content" => $contents[$itemOrder], "display" => $displays[$itemOrder]));
                         }
                     break;
                     case "WhiteBalance":
                         $itemOrder = 9;
-                        $itemName = "白平衡";
-                        $itemMeta = "white balance";
                         if (noDuplicatedItems($photoEXIF, $itemName)) {
+                            $contents[$itemOrder] = $EXIFcontent;
                             switch ($EXIFcontent) {
                                 case "Auto":
                                     $wbv = "自动";
@@ -179,18 +196,19 @@ function getPhotoEXIFById($fObj, $photoId) {
                                 default:
                                     $wbv = $EXIFcontent;
                             }
-                            array_push($photoEXIF, array("order" => $itemOrder, "item" => $itemName, "meta" => $itemMeta, "content" => $EXIFcontent, "display" => $wbv));
+                            $displays[$itemOrder] = $wbv;
+                            array_push($photoEXIF, array("order" => $itemOrder, "item" => $names[$itemOrder], "meta" => $metas[$itemOrder], "content" => $contents[$itemOrder], "display" => $displays[$itemOrder]));
                         }
                     break;
                 }
             }
         }
-        uasort($photoEXIF, "sortEXIF");
-        foreach ($photoEXIF as & $EXIFitem) {
-            array_shift($EXIFitem);
-        }
-        $photoEXIF = array_values($photoEXIF);
     }
+    uasort($photoEXIF, "sortEXIF");
+    foreach ($photoEXIF as & $EXIFitem) {
+        array_shift($EXIFitem);
+    }
+    $photoEXIF = array_values($photoEXIF);
     return $photoEXIF;
 }
 function getPhotoById($fObj, $photoId, $photoSize = NULL, $inAlbums = false, $primarySize = NULL, $withEXIF = false, $interestingnessEvaluation = false) {
@@ -203,12 +221,12 @@ function getPhotoById($fObj, $photoId, $photoSize = NULL, $inAlbums = false, $pr
     $photos = $fObj->photos_getInfo($photoId);
     $photo = $photos["photo"];
     $photoTags = array();
-    if (count($photo["tags"]["tag"]) > 0) {
+    if (count($photo["tags"]["tag"])>0){
         foreach ($photo["tags"]["tag"] as $photoTag) {
             array_push($photoTags, $photoTag["raw"]);
         }
     }
-    $photoInfo = array("id" => $photoId, "title" => $photo["title"]["_content"], "description" => $photo["description"]["_content"], "tags" => $photoTags, "url" => buildImageURL($fObj, $photo, $photoSize), "stamps" => array("taken" => strval(strtotime($photo["dates"]["taken"])), "posted" => $photo["dates"]["posted"], "updated" => $photo["dates"]["lastupdate"]), "dates" => array("taken" => timetotxt($photo["dates"]["taken"], false), "posted" => timetotxt($photo["dates"]["posted"]), "updated" => timetotxt($photo["dates"]["lastupdate"])), "fromToday" => array("taken" => offsetDate($photo["dates"]["taken"], false), "posted" => offsetDate($photo["dates"]["posted"]), "updated" => offsetDate($photo["dates"]["lastupdate"])), "views" => $photo["views"]);
+    $photoInfo = array("id" => $photoId, "title" => $photo["title"]["_content"], "description" => $photo["description"]["_content"], "tags" => $photoTags, "url" => buildImageURL($fObj, $photo, $photoSize), "stamps" => array("taken" => strval(strtotime($photo["dates"]["taken"])), "posted" => $photo["dates"]["posted"], "updated" => $photo["dates"]["lastupdate"]), "dates" => array("taken" => displayTime($photo["dates"]["taken"], false), "posted" => displayTime($photo["dates"]["posted"]), "updated" => displayTime($photo["dates"]["lastupdate"])), "fromToday" => array("taken" => offsetDate($photo["dates"]["taken"], false), "posted" => offsetDate($photo["dates"]["posted"]), "updated" => offsetDate($photo["dates"]["lastupdate"])), "views" => $photo["views"]);
     if (trim($photoInfo["description"]) == "") {
         unset($photoInfo["description"]);
     }
@@ -307,7 +325,7 @@ function getAlbumById($fObj, $albumId, $primarySize = NULL, $withContents = fals
     } else {
         $primary = buildImageURL($fObj, $album, $primarySize);
     }
-    $albumInfo = array("id" => $albumId, "title" => $album["title"]["_content"], "description" => $album["description"]["_content"], "count" => array("photos" => $album["count_photos"], "videos" => $album["count_videos"]), "views" => $album["count_views"], "stamps" => array("created" => $album["date_create"], "updated" => $album["date_update"]), "dates" => array("created" => timetotxt($album["date_create"]), "updated" => timetotxt($album["date_update"])), "fromToday" => array("created" => offsetDate($album["date_create"]), "updated" => offsetDate($album["date_update"])), "primary" => $primary);
+    $albumInfo = array("id" => $albumId, "title" => $album["title"]["_content"], "description" => $album["description"]["_content"], "count" => array("photos" => $album["count_photos"], "videos" => $album["count_videos"]), "views" => $album["count_views"], "stamps" => array("created" => $album["date_create"], "updated" => $album["date_update"]), "dates" => array("created" => displayTime($album["date_create"]), "updated" => displayTime($album["date_update"])), "fromToday" => array("created" => offsetDate($album["date_create"]), "updated" => offsetDate($album["date_update"])), "primary" => $primary);
     if (trim($albumInfo["description"]) == "") {
         unset($albumInfo["description"]);
     }
@@ -365,13 +383,13 @@ function getAlbumsByUser($fObj, $userId, $primarySize = NULL, $mode = NULL, $qua
     foreach ($rawalbums["photoset"] as $rawalbum) {
         $primaryExtras = array_pop($rawalbum);
         $album = array_merge($rawalbum, $primaryExtras);
-        $albumInfo = array("id" => $album["id"], "title" => $album["title"]["_content"], "count" => array("photos" => $album["photos"], "videos" => $album["videos"]), "views" => $album["count_views"], "stamps" => array("created" => $album["date_create"], "updated" => $album["date_update"]), "dates" => array("created" => timetotxt($album["date_create"]), "updated" => timetotxt($album["date_update"])), "fromToday" => array("created" => offsetDate($album["date_create"]), "updated" => offsetDate($album["date_update"])), "primary" => buildImageURL($fObj, $album, $primarySize));
+        $albumInfo = array("id" => $album["id"], "title" => $album["title"]["_content"], "count" => array("photos" => $album["photos"], "videos" => $album["videos"]), "views" => $album["count_views"], "stamps" => array("created" => $album["date_create"], "updated" => $album["date_update"]), "dates" => array("created" => displayTime($album["date_create"]), "updated" => displayTime($album["date_update"])), "fromToday" => array("created" => offsetDate($album["date_create"]), "updated" => offsetDate($album["date_update"])), "primary" => buildImageURL($fObj, $album, $primarySize));
         if (trim($albumInfo["description"]) == "") {
             unset($albumInfo["description"]);
         }
         array_push($albums, $albumInfo);
     }
-    if ($mode != "all") {
+    if ($mode != "all"){
         $albums = selectItems($albums, $quantity);
     }
     return ($mode == "single") ? $albums[0] : $albums;
