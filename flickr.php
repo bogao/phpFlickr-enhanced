@@ -348,11 +348,12 @@ function getAlbumById($fObj, $albumId, $primarySize = NULL, $withContents = fals
     }
     $primarySize = trim(strtolower($primarySize));
     $photoSize = trim(strtolower($photoSize));
+    $primary["id"] = $album["primary"];
     if ($primarySize == "original") {
         $primaryInfo = getPhotoById($fObj, $album["primary"], $primarySize);
-        $primary = $primaryInfo["url"];
+        $primary["url"] = $primaryInfo["url"];
     } else {
-        $primary = buildImageURL($fObj, $album, $primarySize);
+        $primary["url"] = buildImageURL($fObj, $album, $primarySize);
     }
     $albumInfo = array("id" => $albumId, "title" => $album["title"]["_content"], "description" => $album["description"]["_content"], "count" => array("photos" => $album["count_photos"], "videos" => $album["count_videos"]), "views" => $album["count_views"], "stamps" => array("created" => $album["date_create"], "updated" => $album["date_update"]), "dates" => array("created" => displayTime($album["date_create"]), "updated" => displayTime($album["date_update"])), "fromToday" => array("created" => offsetDate($album["date_create"]), "updated" => offsetDate($album["date_update"])), "primary" => $primary);
     if (trim($albumInfo["description"]) == "") {
@@ -416,7 +417,7 @@ function getAlbumsByUser($fObj, $userId, $primarySize = NULL, $mode = NULL, $qua
         $rawAlbum = $rawAlbums["photoset"][$albumKey];
         $primaryExtras = array_pop($rawAlbum);
         $album = array_merge($rawAlbum, $primaryExtras);
-        $albumInfo = array("id" => $album["id"], "title" => $album["title"]["_content"], "count" => array("photos" => $album["photos"], "videos" => $album["videos"]), "views" => $album["count_views"], "stamps" => array("created" => $album["date_create"], "updated" => $album["date_update"]), "dates" => array("created" => displayTime($album["date_create"]), "updated" => displayTime($album["date_update"])), "fromToday" => array("created" => offsetDate($album["date_create"]), "updated" => offsetDate($album["date_update"])), "primary" => buildImageURL($fObj, $album, $primarySize));
+        $albumInfo = array("id" => $album["id"], "title" => $album["title"]["_content"], "count" => array("photos" => $album["photos"], "videos" => $album["videos"]), "views" => $album["count_views"], "stamps" => array("created" => $album["date_create"], "updated" => $album["date_update"]), "dates" => array("created" => displayTime($album["date_create"]), "updated" => displayTime($album["date_update"])), "fromToday" => array("created" => offsetDate($album["date_create"]), "updated" => offsetDate($album["date_update"])), "primary" => array("id" => $album["primary"], "url" => buildImageURL($fObj, $album, $primarySize)));
         if (trim($albumInfo["description"]) == "") {
             unset($albumInfo["description"]);
         }
