@@ -55,15 +55,15 @@ function replaceHost($oldURL, $newHost) {
     $newURL["host"] = $newHost;
     return joinURL($newURL);
 }
-function noDuplicatedItems($all, $n) {
-    foreach ($all as $allnitem) {
-        if (array_search($n, $allnitem) == "item") {
+function noDuplicatedItems($all, $queryItem, $expectedKey = NULL) {
+    foreach ($all as $anItem) {
+        if ((is_null($expectedKey) && array_search($queryItem, $anItem)) || ((!is_null($expectedKey)) && array_search($queryItem, $anItem) == $expectedKey)) {
             return false;
         }
     }
     return true;
 }
-function selectItems($all, $n, $byValue = false) {
+function selectItems($all, $n, $byValue = true) {
     shuffle($all);
     $all = array_slice($all, 0, $n);
     if ($byValue) {
@@ -96,7 +96,7 @@ function getPhotoEXIFById($fObj, $photoId, $lang = "zh-cn") {
         default:
             $names = ["照相机型号", "照相机制造厂商", "镜头规格", "镜头型号", "ISO", "快门", "光圈", "焦距", "闪光灯", "白平衡"];
     }
-    $metas = ["model", "manufacturer", "lens specification", "lens model", "iso", "exposure time", "f number", "focal length", "flash", "white balance"];
+    $metas = ["camara model", "camara manufacturer", "lens specification", "lens model", "iso", "exposure time", "f number", "focal length", "flash", "white balance"];
     if (isset($rawEXIF["camera"])) {
         $itemOrder = 0;
         $contents[$itemOrder] = $rawEXIF["camera"];
@@ -112,7 +112,7 @@ function getPhotoEXIFById($fObj, $photoId, $lang = "zh-cn") {
                 switch ($rawEXIFitem["tag"]) {
                     case "Make":
                         $itemOrder = 1;
-                        if (noDuplicatedItems($photoEXIF, $itemName)) {
+                        if (noDuplicatedItems($photoEXIF, $itemOrder, "order")) {
                             $contents[$itemOrder] = $EXIFcontent;
                             $displays[$itemOrder] = $EXIFcontent;
                             array_push($photoEXIF, array("order" => $itemOrder, "item" => $names[$itemOrder], "meta" => $metas[$itemOrder], "content" => $contents[$itemOrder], "display" => $displays[$itemOrder]));
@@ -120,7 +120,7 @@ function getPhotoEXIFById($fObj, $photoId, $lang = "zh-cn") {
                     break;
                     case "LensSpec":
                         $itemOrder = 2;
-                        if (noDuplicatedItems($photoEXIF, $itemName)) {
+                        if (noDuplicatedItems($photoEXIF, $itemOrder, "order")) {
                             $contents[$itemOrder] = $EXIFcontent;
                             $displays[$itemOrder] = $EXIFcontent;
                             array_push($photoEXIF, array("order" => $itemOrder, "item" => $names[$itemOrder], "meta" => $metas[$itemOrder], "content" => $contents[$itemOrder], "display" => $displays[$itemOrder]));
@@ -128,7 +128,7 @@ function getPhotoEXIFById($fObj, $photoId, $lang = "zh-cn") {
                     break;
                     case "LensModel":
                         $itemOrder = 3;
-                        if (noDuplicatedItems($photoEXIF, $itemName)) {
+                        if (noDuplicatedItems($photoEXIF, $itemOrder, "order")) {
                             $contents[$itemOrder] = $EXIFcontent;
                             $displays[$itemOrder] = $EXIFcontent;
                             array_push($photoEXIF, array("order" => $itemOrder, "item" => $names[$itemOrder], "meta" => $metas[$itemOrder], "content" => $contents[$itemOrder], "display" => $displays[$itemOrder]));
@@ -136,7 +136,7 @@ function getPhotoEXIFById($fObj, $photoId, $lang = "zh-cn") {
                     break;
                     case "ISO":
                         $itemOrder = 4;
-                        if (noDuplicatedItems($photoEXIF, $itemName)) {
+                        if (noDuplicatedItems($photoEXIF, $itemOrder, "order")) {
                             $contents[$itemOrder] = $EXIFcontent;
                             $displays[$itemOrder] = $EXIFcontent;
                             array_push($photoEXIF, array("order" => $itemOrder, "item" => $names[$itemOrder], "meta" => $metas[$itemOrder], "content" => $contents[$itemOrder], "display" => $displays[$itemOrder]));
@@ -144,7 +144,7 @@ function getPhotoEXIFById($fObj, $photoId, $lang = "zh-cn") {
                     break;
                     case "ExposureTime":
                         $itemMeta = "exposure time";
-                        if (noDuplicatedItems($photoEXIF, $itemName)) {
+                        if (noDuplicatedItems($photoEXIF, $itemOrder, "order")) {
                             $contents[$itemOrder] = $EXIFcontent;
                             switch ($lang) {
                                 case "zh-cn":
@@ -159,7 +159,7 @@ function getPhotoEXIFById($fObj, $photoId, $lang = "zh-cn") {
                     break;
                     case "FNumber":
                         $itemOrder = 6;
-                        if (noDuplicatedItems($photoEXIF, $itemName)) {
+                        if (noDuplicatedItems($photoEXIF, $itemOrder, "order")) {
                             $contents[$itemOrder] = $rawEXIFitem["clean"]["_content"];
                             $displays[$itemOrder] = $rawEXIFitem["clean"]["_content"];
                             array_push($photoEXIF, array("order" => $itemOrder, "item" => $names[$itemOrder], "meta" => $metas[$itemOrder], "content" => $contents[$itemOrder], "display" => $displays[$itemOrder]));
@@ -167,7 +167,7 @@ function getPhotoEXIFById($fObj, $photoId, $lang = "zh-cn") {
                     break;
                     case "FocalLength":
                         $itemOrder = 7;
-                        if (noDuplicatedItems($photoEXIF, $itemName)) {
+                        if (noDuplicatedItems($photoEXIF, $itemOrder, "order")) {
                             $contents[$itemOrder] = $EXIFcontent;
                             switch ($lang) {
                                 case "zh-cn":
@@ -182,7 +182,7 @@ function getPhotoEXIFById($fObj, $photoId, $lang = "zh-cn") {
                     break;
                     case "Flash":
                         $itemOrder = 8;
-                        if (noDuplicatedItems($photoEXIF, $itemName)) {
+                        if (noDuplicatedItems($photoEXIF, $itemOrder, "order")) {
                             $contents[$itemOrder] = $EXIFcontent;
                             switch ($lang) {
                                 case "zh-cn":
@@ -207,7 +207,7 @@ function getPhotoEXIFById($fObj, $photoId, $lang = "zh-cn") {
                     break;
                     case "WhiteBalance":
                         $itemOrder = 9;
-                        if (noDuplicatedItems($photoEXIF, $itemName)) {
+                        if (noDuplicatedItems($photoEXIF, $itemOrder, "order")) {
                             $contents[$itemOrder] = $EXIFcontent;
                             switch ($lang) {
                                 case "zh-cn":
@@ -410,7 +410,7 @@ function getAlbumsByUser($fObj, $userId, $primarySize = NULL, $mode = NULL, $qua
         } else if ($quantity < 1) {
             $quantity = 1;
         }
-        $albumKeys = selectItems(range(0, $total - 1), $quantity, true);
+        $albumKeys = selectItems(range(0, $total - 1), $quantity);
     }
     $albums = array();
     foreach ($albumKeys as $albumKey) {
