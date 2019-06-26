@@ -96,7 +96,7 @@ function getPhotoEXIFById($fObj, $photoId, $lang = "zh-cn") {
         default:
             $names = ["照相机型号", "照相机制造厂商", "镜头规格", "镜头型号", "ISO", "快门", "光圈", "焦距", "闪光灯", "白平衡"];
     }
-    $metas = ["camara model", "camara manufacturer", "lens specification", "lens model", "iso", "exposure time", "f number", "focal length", "flash", "white balance"];
+    $metas = ["camera model", "camera manufacturer", "lens specification", "lens model", "iso", "exposure time", "f number", "focal length", "flash", "white balance"];
     if (isset($rawEXIF["camera"])) {
         $itemOrder = 0;
         $contents[$itemOrder] = $rawEXIF["camera"];
