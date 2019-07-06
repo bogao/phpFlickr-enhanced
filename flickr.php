@@ -6,7 +6,6 @@ define("USERHOST", "live.staticflickr.com");
 // define("IPINFODBAPIKEY", "fake-api-key"); // Get yours from https://www.ipinfodb.com/register
 // define("USERLOC", ($json = json_decode(@file_get_contents('https://api.ipinfodb.com/v3/ip-country?key=' . IPINFODBAPIKEY . '&ip=' . $_SERVER['REMOTE_ADDR'] . '&format=json'), true)) ? $json['countryCode'] : "US");
 // define("USERHOST", USERLOC == "CN" ? "fake.flickrcdn.inchina" : "live.staticflickr.com"); // Try https://www.qiniu.com
-
 function displayTime($tt, $stamp = true, $lang = "zh-cn") {
     // 2016-08-04 16:41:14 => 2016年8月4日16时41分
     if ($stamp) {
@@ -50,10 +49,13 @@ function joinURL($parsed_url) {
     $fragment = isset($parsed_url['fragment']) ? '#' . $parsed_url['fragment'] : '';
     return "$scheme$user$pass$host$port$path$query$fragment";
 }
-function replaceHost($oldURL, $newHost) {
-    $newURL = parse_url($oldURL);
-    $newURL["host"] = $newHost;
-    return joinURL($newURL);
+function replaceHost($url, $newHost) {
+    $parsedURL = parse_url($url);
+    $parsedURL["host"] = $newHost;
+    return joinURL($parsedURL);
+}
+function compareByOrder($former, $latter, $orderField = "order") {
+    return ($former[$orderField] < $latter[$orderField]) ? -1 : (($former[$orderField] == $latter[$orderField]) ? 0 : 1);
 }
 function noDuplicatedItems($all, $queryItem, $expectedKey = NULL) {
     foreach ($all as $anItem) {
@@ -73,8 +75,21 @@ function selectItems($all, $n, $byValue = true) {
     }
     return $all;
 }
-function sortEXIF($former, $latter) {
-    return ($former["order"] < $latter["order"]) ? -1 : (($former["order"] == $latter["order"]) ? 0 : 1);
+function changeImageURLSize($url, $targetSize = "base") {
+    $sizes = array("square" => "_s", "square_75" => "_s", "square_150" => "_q", "thumbnail" => "_t", "small" => "_m", "small_240" => "_m", "small_320" => "_n", "medium" => "", "medium_500" => "", "medium_640" => "_z", "medium_800" => "_c", "large" => "_b", "large_1024" => "_b", "large_1600" => "_h", "large_2048" => "_k",);
+    $targetSize = trim(strtolower($targetSize));
+    if (!array_key_exists($targetSize, $sizes)) {
+        $targetSize = "base";
+    }
+    $parsedURL = parse_url($url);
+    $pathParts = explode(".", strpos($parsedURL["path"], ".") ? $parsedURL["path"] : $parsedURL["path"] . ".jpg");
+    $pathName = $pathParts[0];
+    $pathExt = $pathParts[1];
+    if (substr($pathName, -2, 1) == "_") {
+        $pathName = substr($pathName, 0, -2);
+    }
+    $parsedURL["path"] = ($targetSize == "base") ? $pathName : $pathName . $sizes[$targetSize] . "." . $pathExt;
+    return joinURL($parsedURL);
 }
 function buildImageURL($fObj, $image, $imageSize) {
     if (array_key_exists("primary", $image)) {
@@ -236,12 +251,11 @@ function getPhotoEXIFById($fObj, $photoId, $lang = "zh-cn") {
             }
         }
     }
-    uasort($photoEXIF, "sortEXIF");
+    uasort($photoEXIF, "compareByOrder");
     foreach ($photoEXIF as & $EXIFitem) {
         array_shift($EXIFitem);
     }
-    $photoEXIF = array_values($photoEXIF);
-    return $photoEXIF;
+    return array_values($photoEXIF);
 }
 function getPhotoById($fObj, $photoId, $photoSize = NULL, $inAlbums = false, $primarySize = NULL, $withEXIF = false, $interestingnessEvaluation = false) {
     if (is_null($photoSize)) {
@@ -253,10 +267,8 @@ function getPhotoById($fObj, $photoId, $photoSize = NULL, $inAlbums = false, $pr
     $photos = $fObj->photos_getInfo($photoId);
     $photo = $photos["photo"];
     $photoTags = array();
-    if (count($photo["tags"]["tag"]) > 0) {
-        foreach ($photo["tags"]["tag"] as $photoTag) {
-            array_push($photoTags, $photoTag["raw"]);
-        }
+    foreach ($photo["tags"]["tag"] as $photoTag) {
+        array_push($photoTags, $photoTag["raw"]);
     }
     $photoInfo = array("id" => $photoId, "title" => $photo["title"]["_content"], "description" => $photo["description"]["_content"], "tags" => $photoTags, "url" => buildImageURL($fObj, $photo, $photoSize), "stamps" => array("taken" => strval(strtotime($photo["dates"]["taken"])), "posted" => $photo["dates"]["posted"], "updated" => $photo["dates"]["lastupdate"]), "dates" => array("taken" => displayTime($photo["dates"]["taken"], false), "posted" => displayTime($photo["dates"]["posted"]), "updated" => displayTime($photo["dates"]["lastupdate"])), "fromToday" => array("taken" => offsetDate($photo["dates"]["taken"], false), "posted" => offsetDate($photo["dates"]["posted"]), "updated" => offsetDate($photo["dates"]["lastupdate"])), "views" => intval($photo["views"]));
     if (trim($photoInfo["description"]) == "") {
@@ -268,11 +280,9 @@ function getPhotoById($fObj, $photoId, $photoSize = NULL, $inAlbums = false, $pr
     if ($inAlbums) {
         $sarr = array();
         $albums = $fObj->photos_getAllContexts($photoId);
-        if (count($albums["set"]) > 0) {
-            foreach ($albums["set"] as $spset) {
-                $pInfo = getPhotoById($fObj, $spset["primary"], $primarySize);
-                array_push($sarr, array("id" => $spset["id"], "title" => $spset["title"], "primary" => $spset["primary"], "url" => $pInfo["url"]));
-            }
+        foreach ($albums["set"] as $spset) {
+            $pInfo = getPhotoById($fObj, $spset["primary"], $primarySize);
+            array_push($sarr, array("id" => $spset["id"], "title" => $spset["title"], "primary" => $spset["primary"], "url" => $pInfo["url"]));
         }
         $photoInfo["albums"] = $sarr;
     }
