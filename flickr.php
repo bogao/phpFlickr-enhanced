@@ -37,7 +37,7 @@ function offsetDate($tt, $stamp = true) {
     $oDate = date_diff(date_create($tt), date_create(date('Y-m-d')));
     return $oDate ? intval($oDate->format("%R%a")) : NULL;
 }
-function joinURL($parsed_url) {
+function joinURL($parsed_url, $full = true) {
     $scheme = isset($parsed_url['scheme']) ? $parsed_url['scheme'] . '://' : '';
     $host = isset($parsed_url['host']) ? $parsed_url['host'] : '';
     $port = isset($parsed_url['port']) ? ':' . $parsed_url['port'] : '';
@@ -47,12 +47,24 @@ function joinURL($parsed_url) {
     $path = isset($parsed_url['path']) ? $parsed_url['path'] : '';
     $query = isset($parsed_url['query']) ? '?' . $parsed_url['query'] : '';
     $fragment = isset($parsed_url['fragment']) ? '#' . $parsed_url['fragment'] : '';
-    return "$scheme$user$pass$host$port$path$query$fragment";
+    return $full ? "$scheme$user$pass$host$port$path$query$fragment" : "$path$query$fragment";
 }
-function replaceHost($url, $newHost) {
+function replaceHost($url, $newHost = NULL) {
     $parsedURL = parse_url($url);
-    $parsedURL["host"] = $newHost;
-    return joinURL($parsedURL);
+    if (is_null($newHost)){
+    	return joinURL($parsedURL, false);
+    } else {
+	    $parsedURL["host"] = $newHost;
+	    return joinURL($parsedURL);
+    }
+}
+function addPath($url, $prefix = NULL, $suffix = NULL){
+	$parsedURL = parse_url($url);
+	$parsedURL['path'] = str_replace('//', '/',
+		(is_null($prefix) ? '' : '/' . $prefix . '/') .
+		(isset($parsedURL['path']) ? $parsedURL['path'] : '') .
+		(is_null($suffix) ? '' : '/' . $suffix . '/'));
+	return joinURL($parsedURL);
 }
 function compareByOrder($former, $latter, $orderField = "order") {
     return ($former[$orderField] < $latter[$orderField]) ? -1 : (($former[$orderField] == $latter[$orderField]) ? 0 : 1);
