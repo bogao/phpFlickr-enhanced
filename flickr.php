@@ -37,6 +37,34 @@ function offsetDate($tt, $stamp = true) {
     $oDate = date_diff(date_create($tt), date_create(date('Y-m-d')));
     return $oDate ? intval($oDate->format("%R%a")) : NULL;
 }
+function rel2abs($rel, $base)
+{
+    /* return if already absolute URL */
+    if (parse_url($rel, PHP_URL_SCHEME) != '') return $rel;
+
+    /* queries and anchors */
+    if ($rel[0]=='#' || $rel[0]=='?') return $base.$rel;
+
+    /* parse base URL and convert to local variables:
+       $scheme, $host, $path */
+    extract(parse_url($base));
+
+    /* remove non-directory element from path */
+    $path = preg_replace('#/[^/]*$#', '', $path);
+
+    /* destroy path if relative url points to root */
+    if ($rel[0] == '/') $path = '';
+
+    /* dirty absolute URL */
+    $abs = "$host$path/$rel";
+
+    /* replace '//' or '/./' or '/foo/../' with '/' */
+    $re = array('#(/\.?/)#', '#/(?!\.\.)[^/]+/\.\./#');
+    for($n=1; $n>0; $abs=preg_replace($re, '/', $abs, -1, $n)) {}
+
+    /* absolute URL is ready! */
+    return $scheme.'://'.$abs;
+}
 function joinURL($parsed_url, $full = true) {
     $scheme = isset($parsed_url['scheme']) ? $parsed_url['scheme'] . '://' : '';
     $host = isset($parsed_url['host']) ? $parsed_url['host'] : '';
@@ -59,12 +87,18 @@ function replaceHost($url, $newHost = NULL) {
     }
 }
 function addPath($url, $prefix = NULL, $suffix = NULL){
+	$relurl = false;
+	if (!strpos($url, ':/')) {
+		$relurl = true;
+		$url = rel2abs($url, 'http://fakeurl.com');
+	}
+
 	$parsedURL = parse_url($url);
 	$parsedURL['path'] = str_replace('//', '/',
 		(is_null($prefix) ? '' : '/' . $prefix . '/') .
 		(isset($parsedURL['path']) ? $parsedURL['path'] : '') .
 		(is_null($suffix) ? '' : '/' . $suffix . '/'));
-	return joinURL($parsedURL);
+	return $relurl ? replaceHost(joinURL($parsedURL)) : joinURL($parsedURL);
 }
 function compareByOrder($former, $latter, $orderField = "order") {
     return ($former[$orderField] < $latter[$orderField]) ? -1 : (($former[$orderField] == $latter[$orderField]) ? 0 : 1);
@@ -88,20 +122,25 @@ function selectItems($all, $n, $byValue = true) {
     return $all;
 }
 function changeImageURLSize($url, $targetSize = "base") {
-    $sizes = array("square" => "_s", "square_75" => "_s", "square_150" => "_q", "thumbnail" => "_t", "small" => "_m", "small_240" => "_m", "small_320" => "_n", "medium" => "", "medium_500" => "", "medium_640" => "_z", "medium_800" => "_c", "large" => "_b", "large_1024" => "_b", "large_1600" => "_h", "large_2048" => "_k",);
-    $targetSize = trim(strtolower($targetSize));
-    if (!array_key_exists($targetSize, $sizes)) {
+	$relurl = false;
+	if (!strpos($url, ':/')) {
+		$relurl = true;
+		$url = rel2abs($url, 'http://fakeurl.com');
+	}
+	$sizes = array("square" => "_s", "square_75" => "_s", "square_150" => "_q", "thumbnail" => "_t", "small" => "_m", "small_240" => "_m", "small_320" => "_n", "medium" => "", "medium_500" => "", "medium_640" => "_z", "medium_800" => "_c", "large" => "_b", "large_1024" => "_b", "large_1600" => "_h", "large_2048" => "_k",);
+	$targetSize = trim(strtolower($targetSize));
+	if (!array_key_exists($targetSize, $sizes)) {
         $targetSize = "base";
     }
-    $parsedURL = parse_url($url);
-    $pathParts = explode(".", strpos($parsedURL["path"], ".") ? $parsedURL["path"] : $parsedURL["path"] . ".jpg");
-    $pathName = $pathParts[0];
-    $pathExt = $pathParts[1];
-    if (substr($pathName, -2, 1) == "_") {
-        $pathName = substr($pathName, 0, -2);
-    }
-    $parsedURL["path"] = ($targetSize == "base") ? $pathName : $pathName . $sizes[$targetSize] . "." . $pathExt;
-    return joinURL($parsedURL);
+	$parsedURL = parse_url($url);
+	$pathParts = explode(".", strpos($parsedURL["path"], ".") ? $parsedURL["path"] : $parsedURL["path"] . ".jpg");
+	$pathName = $pathParts[0];
+	$pathExt = $pathParts[1];
+	if (substr($pathName, -2, 1) == "_") {
+		$pathName = substr($pathName, 0, -2);
+	}
+	$parsedURL["path"] = ($targetSize == "base") ? $pathName : $pathName . $sizes[$targetSize] . "." . $pathExt;
+	return $relurl ? replaceHost(joinURL($parsedURL)) : joinURL($parsedURL);
 }
 function buildImageURL($fObj, $image, $imageSize) {
     if (array_key_exists("primary", $image)) {
