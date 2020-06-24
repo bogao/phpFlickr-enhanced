@@ -127,7 +127,7 @@ function changeImageURLSize($url, $targetSize = "base") {
 		$relurl = true;
 		$url = rel2abs($url, 'http://fakeurl.com');
 	}
-	$sizes = array("square" => "_s", "square_75" => "_s", "square_150" => "_q", "thumbnail" => "_t", "small" => "_m", "small_240" => "_m", "small_320" => "_n", "medium" => "", "medium_500" => "", "medium_640" => "_z", "medium_800" => "_c", "large" => "_b", "large_1024" => "_b", "large_1600" => "_h", "large_2048" => "_k",);
+	$sizes = array("square" => "_s", "square_75" => "_s", "square_150" => "_q", "thumbnail" => "_t", "small" => "_m", "small_240" => "_m", "small_320" => "_n", "medium" => "", "medium_500" => "", "medium_640" => "_z", "medium_800" => "_c", "large" => "_b", "large_1024" => "_b", "large_1600" => "_h", "large_2048" => "_k");
 	$targetSize = trim(strtolower($targetSize));
 	if (!array_key_exists($targetSize, $sizes)) {
         $targetSize = "base";
@@ -335,7 +335,9 @@ function getPhotoById($fObj, $photoId, $photoSize = NULL, $inAlbums = false, $pr
             $pInfo = getPhotoById($fObj, $spset["primary"], $primarySize);
             array_push($sarr, array("id" => $spset["id"], "title" => $spset["title"], "primary" => $spset["primary"], "url" => $pInfo["url"]));
         }
-        $photoInfo["albums"] = $sarr;
+        if (!empty($sarr)){
+            $photoInfo["albums"] = $sarr;
+        }
     }
     if ($withEXIF) {
         $photoInfo["exif"] = getPhotoEXIFById($fObj, $photoId);
@@ -398,6 +400,33 @@ function getPhotosByUser($fObj, $userId, $mode = NULL, $perPage = NULL, $pageOrd
         array_push($photoInfo, $currentPhotoInfo);
     }
     return ($mode == "single") ? $photoInfo[0] : $photoInfo;
+}
+function photoIsPrimary($fObj, $photoInfo, $mode = NULL){
+    if (!is_null($mode)) {
+        $mode = trim(strtolower($mode));
+    }
+    switch ($mode) {
+        case "id": $photoInfo = getPhotoById($fObj, $photoInfo); break;
+        case "user": $photoInfo = getPhotosByUser($fObj, $photoInfo, "single"); break;
+    }
+    $isPrimary = false;
+    foreach ($photoInfo["albums"] as $album){
+        if ($photoInfo["id"] == $album["primary"]){
+            $isPrimary = true;
+            break;
+        }
+    }
+    return $isPrimary;
+}
+function photoHasAlbum($fObj, $photoInfo, $mode = NULL){
+    if (!is_null($mode)) {
+        $mode = trim(strtolower($mode));
+    }
+    switch ($mode) {
+        case "id": $photoInfo = getPhotoById($fObj, $photoInfo, NULL, true); break;
+        case "user": $photoInfo = getPhotosByUser($fObj, $photoInfo, "single", NULL, NULL, NULL, true); break;
+    }
+    return array_key_exists("albums", $photoInfo);
 }
 function getAlbumById($fObj, $albumId, $primarySize = NULL, $withContents = false, $perPage = NULL, $pageOrder = NULL, $photoSize = NULL) {
     $album = $fObj->photosets_getInfo($albumId);
@@ -486,6 +515,7 @@ function getAlbumsByUser($fObj, $userId, $primarySize = NULL, $mode = NULL, $qua
     }
     return ($mode == "single") ? $albums[0] : $albums;
 }
+?>
 // API code ends here.
 // Client code follows.
 
